@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f6f8">
+<title>新马口语翻译器</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#202633;background:#f5f6f8}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:34px 16px;background:radial-gradient(circle at 10% 0%,#e8f1ff 0,transparent 32%),#f5f6f8}
+main{max-width:850px;margin:auto}.top{margin-bottom:22px}.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;color:#4268a8;text-transform:uppercase}
+h1{font-size:clamp(28px,5vw,40px);margin:8px 0 8px;letter-spacing:-.04em}.sub{color:#687386;line-height:1.6;margin:0}
+.panel{background:#fff;border:1px solid #e5e9f0;border-radius:20px;padding:22px;box-shadow:0 12px 35px #24344b0c}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+select,button,textarea{font:inherit}select{border:1px solid #dce2eb;border-radius:11px;padding:11px 13px;background:#fff;color:#273244}
+.swap{border:0;background:#edf2fa;border-radius:10px;width:40px;height:40px;cursor:pointer;color:#4268a8;font-size:19px}
+.labelrow{display:flex;justify-content:space-between;align-items:center;margin:15px 0 9px;font-size:14px;font-weight:700}
+textarea{width:100%;min-height:150px;resize:vertical;border:1px solid #dce2eb;border-radius:13px;padding:15px;line-height:1.65;color:#202633;outline:none}
+textarea:focus,select:focus{border-color:#7398d4;box-shadow:0 0 0 3px #7398d41c}
+textarea::placeholder{color:#a0a8b5}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+button.primary{border:0;background:#285da8;color:white;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
+button.primary:hover{background:#1f4d8d}button:disabled{opacity:.55;cursor:wait}
+button.secondary{border:1px solid #dce2eb;background:#fff;color:#3b4657;border-radius:12px;padding:11px 16px;cursor:pointer}
+.hint{font-size:12px;color:#8791a0;margin-left:auto}
+.result{min-height:150px;background:#f8faff;border:1px solid #e2eaf7;border-radius:13px;padding:15px;white-space:pre-wrap;line-height:1.7;color:#26364d}
+.result.empty{color:#a0a8b5}.status{font-size:13px;color:#637086;margin-top:10px;min-height:20px}
+.note{font-size:12px;color:#8993a2;line-height:1.6;margin:18px 2px 0}
+@media(max-width:560px){body{padding:22px 12px}.panel{padding:16px}.hint{width:100%;margin-left:0}}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="eyebrow">Everyday Singlish / Manglish</div>
+    <h1>新马口语翻译器</h1>
+    <p class="sub">把中文变成自然、轻松的新加坡／马来西亚英语口语，也可以把英文翻译成中文。适合 WhatsApp 日常聊天。</p>
+  </header>
+  <section class="panel">
+    <div class="controls">
+      <select id="from" aria-label="原文语言"><option value="中文">中文</option><option value="英文">英文</option></select>
+      <button class="swap" id="swap" title="交换语言" aria-label="交换语言">⇄</button>
+      <select id="to" aria-label="翻译语言"><option value="新马英语口语">新马英语口语</option><option value="自然中文">自然中文</option></select>
+    </div>
+    <div class="labelrow"><label for="source">输入内容</label><span id="count">0 字</span></div>
+    <textarea id="source" maxlength="3000" placeholder="输入你想翻译的内容……"></textarea>
+    <div class="actions">
+      <button class="primary" id="translate">翻译</button>
+      <button class="secondary" id="clear">清空</button>
+      <span class="hint">最多 3,000 字</span>
+    </div>
+    <div class="labelrow"><span>翻译结果</span><button class="secondary" id="copy">复制结果</button></div>
+    <div class="result empty" id="result" aria-live="polite">翻译结果会显示在这里。</div>
+    <div class="status" id="status" role="status"></div>
+  </section>
+  <p class="note">翻译风格：自然、简短、像朋友聊天；可适度使用 lah、leh、lor、meh、hor 等语气词，但不会刻意堆砌。保留原意、情绪和幽默，不擅自增加内容。</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const from=$("from"),to=$("to"),source=$("source"),result=$("result"),status=$("status"),translateBtn=$("translate");
+source.addEventListener("input",()=> $("count").textContent=source.value.length+" 字");
+$("swap").addEventListener("click",()=>{
+  const old=from.value; from.value=old==="中文"?"英文":"中文";
+  to.value=from.value==="中文"?"新马英语口语":"自然中文";
+});
+$("clear").addEventListener("click",()=>{source.value="";result.textContent="翻译结果会显示在这里。";result.classList.add("empty");status.textContent="";$("count").textContent="0 字";source.focus()});
+$("copy").addEventListener("click",async()=>{
+  const text=result.classList.contains("empty")?"":result.textContent;
+  if(!text){status.textContent="目前没有可复制的翻译结果。";return}
+  try{await navigator.clipboard.writeText(text);status.textContent="已复制！"}
+  catch{status.textContent="复制失败，请手动选取结果复制。"}
+});
+translateBtn.addEventListener("click",async()=>{
+  const text=source.value.trim();
+  if(!text){status.textContent="请先输入要翻译的内容。";source.focus();return}
+  translateBtn.disabled=true;translateBtn.textContent="翻译中…";status.textContent="正在翻译，请稍候……";
+  try{
+    const res=await fetch("/api/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,from:from.value,to:to.value})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||"翻译失败，请稍后再试。");
+    result.textContent=data.translation||"没有收到翻译结果。";result.classList.remove("empty");status.textContent="翻译完成。";
+  }catch(e){status.textContent=e.message||"连接失败，请检查网络或部署设置。"}
+  finally{translateBtn.disabled=false;translateBtn.textContent="翻译"}
+});
+</script>
+</body>
+</html>
